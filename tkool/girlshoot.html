@@ -1,0 +1,233 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="ja" lang="ja">
+<head>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,minimum-scale=1.0,user-scalable=no">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta http-equiv="Content-Style-Type" content="text/css" />
+<meta http-equiv="Content-Script-Type" content="text/javascript" />
+<meta http-equiv="imagetoolbar" content="no" />
+
+<script type="text/javascript" src="src/jquery.js"></script>
+
+<title>NovelGameTkool</title>
+</head>
+<body>
+
+<div id="preview">
+	読み込み中です。この画面がずっと表示されている場合は、Javascript非対応です。対応するようにしてください。
+</div>
+
+<div id="modepanel">
+	
+</div>
+
+<div id="eventlist" hidden>
+	追加するイベントを指定してください。<br>
+	<input type="button" value="テキストの表示" style="width: 95%" onClick="GotoEvent(0)"/><br>
+	<input type="button" value="背景画像の表示/消去" style="width: 95%" onClick="GotoEvent(1)"/><br>
+	<input type="button" value="立ち絵の表示/消去" style="width: 95%" onClick="GotoEvent(2)"/><br>
+	<input type="button" value="BGMの演奏処理" style="width: 95%" onClick="GotoEvent(3)"/><br>
+	<input type="button" value="SEの演奏処理" style="width: 95%" onClick="GotoEvent(4)"/>
+	<input type="button" value="キャンセル" style="width: 95%" onClick="BacktoEventlist(false)"/>
+</div>
+
+<div id="argumentspace" hidden>
+	
+</div>
+<h4>ゲームデータの保存</h4>
+<input type="button" value="ローカルセーブ"/>
+<input type="button" value="データベースに保存"/>
+
+<script>
+
+//GLOBAL変数
+var g = null;
+var recorded_eventeditingnum = 0;
+var editing_object_type = 0;
+var isEditing = false;
+var PLAYHUB_NOVEL_NILMODE = -1;
+var PLAYHUB_NOVEL_TEXTMODE = 0;
+
+
+function initmode(){
+	$("#preview").html("");
+	g = new GameData();
+	g.setText();
+}
+
+function Part(cmo){
+	this.gamedata = typeof cmo === "undefined" ? new GameData(): cmo;
+}
+function CommandObject(type,args){
+	this.type = type;
+	this.args = args;
+}
+function GameData(){
+	this.array = [new CommandObject(-1,[])];
+	this.length = 0;//this.arrayのnilを除外したものの長さなので注意
+}
+GameData.prototype.add = function(num,obj){
+	if(this.length === num){
+		this.array[this.length] = obj;
+		this.array[this.length + 1] = new CommandObject(-1,[]);
+	}else{
+		for(var i=this.length;i>=num;i--){
+			this.array[i+1] = this.array[i];
+		}
+		this.array[num] = obj;
+	}
+	
+	this.length ++;
+};
+GameData.prototype.delete = function(num){
+	if(this.length === 0){
+		throw "DeleteImpossibleException";
+	}
+	this.array[Number(num)] = new CommandObject(-1,[]);
+	for(var i=num;i<=this.length-1;i++){
+		this.array[i] = this.array[i+1];
+	}
+	
+	this.length --;
+};
+GameData.prototype.setText = function(){
+	var getstr = "<select name = \"f_modepanel\" size=\"10\" style=\"width: 99%\">";
+	var graph = ["文章","背景","立ち絵"];
+	for(var i=0;i<=this.length;i++){
+		var t = this.array[i];
+		var text = (t.type !== -1) ? graph[t.type] + "：" : "";
+		
+		if(t.type === -1){
+			text += "";
+		}else if(t.type === 0){
+			text += t.args[0];
+		}else if(t.type === 1){
+			text += t.args[0];
+		}
+		getstr += "<option value=\""+i+"\">◆"+text+"</option>";
+	}
+	getstr += "</select><br>";
+	getstr += "<input type=\"button\" value=\"追加\" style=\"width: 33%\" onClick=\"AddEvent()\">";
+	getstr += "<input type=\"button\" value=\"編集\" style=\"width: 33%\" onClick=\"EditEvent()\">";
+	getstr += "<input type=\"button\" value=\"削除\" style=\"width: 33%\" onClick=\"DeleteEvent()\">";
+	$("#modepanel").html(getstr);
+};
+GameData.prototype.getData = function(n){
+	if(typeof this.array[n] === "undefined" || this.array[n] === null){
+		throw "NullPointerException"+recorded_eventeditingnum;
+	}
+	return this.array[n];
+};
+GameData.prototype.setData = function(num,obj){
+	this.array[num] = obj;
+};
+
+function WriteScreen(eventnum){
+	var str = ["テキストの表示","背景の出現/消去","立ち絵の表示/消去"][eventnum] + "<br>";
+	if(eventnum === 0){
+		str += "<textarea rows=5 name=\"arg0\" style=\"width:95%\"></textarea>";
+	}else if(eventnum === 1){
+		str += "<input type=\"text\" name=\"arg0\" style=\"width:95%\"/>";
+	}
+	
+	str += "<input type=\"button\" style=\"width:95%\" onClick=\"BacktoEventlist(true)\" value=\"OK\"/>";
+	str += "<input type=\"button\" style=\"width:95%\" onClick=\"BacktoEventlist(false)\" value=\"NG\"/>";
+	
+	$("#argumentspace").html(str);
+}
+
+
+function Save(text){
+	//ajaxでやる
+}
+function DeleteEvent(){
+	recorded_eventeditingnum = Number($("[name=f_modepanel]").val());
+	if(typeof recorded_eventeditingnum !== "number" || g.getData(recorded_eventeditingnum).type === -1){
+		alert("削除する位置を選択してください。");
+		return;
+	}
+	g.delete(recorded_eventeditingnum);
+	g.setText();
+}
+
+function GotoEvent(num){
+	isEditing = false;
+	editing_object_type = num;
+	WriteScreen(editing_object_type);
+	$("#argumentspace").show();
+	$("#eventlist").hide();
+}
+function AddEvent(){
+	recorded_eventeditingnum = Number($("[name=f_modepanel]").val());
+	if(typeof recorded_eventeditingnum !== "number"){
+		alert("追加する位置を選択してください。");
+		return;
+	}
+	$("#eventlist").show();
+	$("#modepanel").hide();
+}
+function EditEvent(){
+	//データの書き込み
+	isEditing = true;
+	recorded_eventeditingnum = Number($("[name=f_modepanel]").val());
+	if(typeof recorded_eventeditingnum !== "number"){
+		alert("追加する位置を選択してください。");
+		return;
+	}
+	data = g.getData(recorded_eventeditingnum);
+	if(data.type === -1){
+		AddEvent();
+		return;
+	}
+	
+	editing_object_type = data.type;
+	var argumentval = [1,1];
+	//書き込みWindowの作成
+	WriteScreen(editing_object_type);
+	for(var i=0;i<=argumentval[editing_object_type]-1;i++){
+		$("[name=arg"+i+"]").val(data.args[i]);
+	}
+	
+	$("#argumentspace").show();
+	$("#modepanel").hide();
+}
+function BacktoEventlist(writeok){
+	//データのセーブ
+	if(writeok){
+		var type = editing_object_type;
+		var arr = [];
+		for(var i=0;i<=15;i++){
+			tt = $("[name=arg"+i+"]").val();
+			if(typeof tt !== "undefined" && tt !== null){
+				arr[i] = tt;
+				$("[name=arg"+i+"]").val("");
+			}else{
+				break;
+			}
+		}
+		var saveobj = new CommandObject(type,arr);
+		if(!isEditing){
+			g.add(recorded_eventeditingnum,saveobj);
+		}else{
+			g.setData(recorded_eventeditingnum,saveobj);
+		}
+	}
+	
+	//データの表示
+	g.setText();
+	$("#argumentspace").hide();
+	$("#eventlist").hide();
+	$("#modepanel").show();
+}
+
+
+
+
+
+
+initmode();
+
+</script>
+
+</body>
+</html>

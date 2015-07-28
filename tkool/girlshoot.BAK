@@ -1,0 +1,151 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="ja" lang="ja">
+<head>
+<meta name="viewport" content="width=480,initial-scale=1.0,minimum-scale=1.0,user-scalable=no">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta http-equiv="Content-Style-Type" content="text/css" />
+<meta http-equiv="Content-Script-Type" content="text/javascript" />
+<meta http-equiv="imagetoolbar" content="no" />
+
+<script type="text/javascript" src="src/jquery.js"></script>
+
+<title>NovelGameTkool</title>
+</head>
+<body>
+
+<div id="preview">
+	読み込み中です。この画面がずっと表示されている場合は、Javascript非対応です。対応するようにしてください。
+</div>
+
+<div id="modepanel">
+	
+</div>
+
+<div id="eventlist">
+
+</div>
+
+<div id="argumentspace" hidden>
+	文章の表示：
+	<textarea rows="5" name="arg0" style="width: 95%"></textarea>
+	
+	
+	<input type="button" style="width:95%" onClick="BacktoEventlist(true)" value="OK"/>
+	<input type="button" style="width:95%" onClick="BacktoEventlist(false)" value="NG"/>
+</div>
+
+<script>
+
+
+var g = null;
+var recorded_eventeditingnum = 0;
+var editing_object_type = 0;
+var PLAYHUB_NOVEL_NILMODE = -1;
+var PLAYHUB_NOVEL_TEXTMODE = 0;
+
+
+function initmode(){
+	$("#preview").html("");
+	g = new GameData();
+	g.setText();
+}
+
+function Part(cmo){
+	this.gamedata = typeof cmo === "undefined" ? new GameData(): cmo;
+}
+function CommandObject(type,args){
+	this.type = type;
+	this.args = args;
+}
+function GameData(){
+	this.array = [new CommandObject(-1,[])];
+	this.length = 0;//this.arrayのnilを除外したものの長さなので注意
+}
+GameData.prototype.add = function(num,obj){
+	if(this.length === num){
+		this.array[this.length] = obj;
+		this.array[this.length + 1] = new CommandObject(-1,[]);
+	}else{
+		for(var i=this.length;i>=num;i--){
+			this.array[i+1] = this.array[i];
+		}
+		this.array[num] = obj;
+	}
+	
+	this.length ++;
+};
+GameData.prototype.delete = function(){
+	if(this.length === 0){
+		throw "DeleteImpossibleException";
+	}
+	this.length --;
+};
+GameData.prototype.setText = function(){
+	var getstr = "<select name = \"f_modepanel\" size=\"10\" style=\"width: 95%\" onClick=\"GotoEvent()\">";
+	for(var i=0;i<=this.array.length-1;i++){
+		var t = this.array[i];
+		
+		var text;
+		if(t.type === -1){
+			text = "";
+		}else if(t.type === 0){
+			text = "文章："+t.args[0];
+		}
+		getstr += "<option value=\""+i+"\">◆"+text+"</option>"
+	}
+	getstr += "</select>"
+	$("#modepanel").html(getstr);
+};
+GameData.prototype.getData = function(n){
+	if(typeof this.array[n] === "undefined" || this.array[n] === null){
+		throw "NullPointerException";
+	}
+	return this.array[n];
+};
+
+
+function Save(text){
+	//ajaxでやる
+}
+
+function GotoEvent(){
+	recorded_eventeditingnum = $("[name=f_modepanel]").val();
+	console.log(recorded_eventeditingnum);
+	$("#argumentspace").show();
+	$("#modepanel").hide();
+}
+function BacktoEventlist(isSaveargs){
+	//データのセーブ
+	if(isSaveargs){
+		var type = editing_object_type;
+		var arr = [];
+		for(var i=0;i<=15;i++){
+			tt = $("[name=arg"+i+"]").val();
+			if(typeof tt !== "undefined" && tt !== null){
+				arr[i] = tt;
+				$("[name=arg"+i+"]").val("");
+			}else{
+				break;
+			}
+		}
+		var saveobj = new CommandObject(type,arr);
+		g.add(recorded_eventeditingnum,saveobj);
+	}
+	
+	//データの表示
+	g.setText();
+	$("#argumentspace").hide();
+	$("#modepanel").show();
+}
+
+
+
+
+
+
+initmode();
+
+</script>
+
+</body>
+</html>

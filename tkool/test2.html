@@ -1,0 +1,50 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="ja" lang="ja">
+<head>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,minimum-scale=1.0,user-scalable=no">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta http-equiv="Content-Style-Type" content="text/css" />
+<meta http-equiv="Content-Script-Type" content="text/javascript" />
+<meta http-equiv="imagetoolbar" content="no" />
+
+<script type="text/javascript" src="src/jquery.js"></script>
+<script type="text/javascript" src="src/novelbase.js"></script>
+<script type="text/javascript" src="src/generator.js"></script>
+
+<title>NovelGameTkool</title>
+</head>
+<body>
+
+
+<canvas id="novel_canvas" width="480" height="360"></canvas>
+<pre><div id="noveldata" hidden>
+@scene first
+	#
+	#	時間があるときに作れ
+	#
+	setbg mami
+	setstand ほむら笑う c
+	setstand ほむらふぁさ c
+	setstand -- c
+	text [ゆき]/_
+		わたし、学校が大好き！
+	setbg --
+	text [ゆき]/_
+		理科室！/_
+		ここはいろんな実験道具が詰まっているんだよ！
+nextgo to first
+@loadimg
+mami mamitta.jpg
+ほむら笑う h1.png
+ほむらふぁさ h2.png
+@scene second
+	text _
+		う・・・
+end
+</div></pre>
+<script>
+CallGame();
+</script>
+
+</body>
+</html>

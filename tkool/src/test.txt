@@ -1,0 +1,42 @@
+#
+#Manual
+文字①_文字２
+文字３
+
+この場合は、文字①文字３としてコンパイラは認識します。
+
+@:セクレタを変更する命令。たいていの場合、行変更は必要ないが、することが望ましい。
+
+#：これより後はコメント
+<>:文章の処理および選択肢の処理に限り、数値演算部分として処理します。コンパイラでは深さ判定以外行いません。
+
+
+#
+
+@attribute
+test true
+begin log
+imgpath src/
+bgmpath src/
+
+@scene log
+text 5555
+nextgo pain cpt log ss ss 社会 里佳 55 00
+
+@imgload
+ss dragon.png
+
+@bgmload
+ss se
+
+＃＃＃
+
+@attribute
+test true
+begin log
+imgpath src/
+bgmpath src/
+
+@scene log
+text AAA
+end
